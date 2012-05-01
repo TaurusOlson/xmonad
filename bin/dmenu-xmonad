@@ -1,0 +1,8 @@
+#!/bin/sh
+# Script to launch dmenu with colors matching IR_Black theme
+# Author: Vic Fryzel
+# http://github.com/vicfryzel/xmonad-config
+
+
+/usr/bin/dmenu_run -fn '-*-terminus-*-r-normal-*-14-120-*-*-*-*-iso8859-*' \
+  -nb '#151515' -nf '#c3c2c5' -sb '#7C7C7C' -sf '#CEFFAC'
