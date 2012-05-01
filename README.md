@@ -5,12 +5,12 @@ This is my xmonad configuration based on [Vic Fryzel's xmonad-config](http://git
 
 # INSTALLATION
 
-* Clone the repository 
+Clone the repository 
 
     git clone http://github.com/TaurusOlson/xmonad.git ~/.xmonad
 
 
-* Set the xinitrc file and copy the startup file for xmonad
+Set the xinitrc file and copy the startup file for xmonad
 
     cd ~/.xmonad
     make 
