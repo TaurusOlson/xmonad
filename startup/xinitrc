@@ -1,0 +1,8 @@
+xsetroot -cursor_name left_ptr &
+# Keyboard: french - macbook78
+setxkbmap -layout fr -model macbook78 &
+# Xdefaults
+xrdb -merge ~/.Xdefaults &
+
+# XMONAD
+~/bin/xmonad-startup.sh
