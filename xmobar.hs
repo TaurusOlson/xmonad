@@ -5,7 +5,8 @@
 -- This is setup for dual 1920x1080 monitors, with the right monitor as primary
 Config {
     font = "xft:Pragmata-10",
-    bgColor = "#151515",
+    -- bgColor = "#151515",
+    bgColor = "#222222",
     fgColor = "#c3c2c5",
     -- position = Static { xpos = 1920, ypos = 0, width = 1800, height = 16 },
     lowerOnStart = True,
