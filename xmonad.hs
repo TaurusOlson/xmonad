@@ -5,21 +5,34 @@
 import System.IO
 import System.Exit
 import XMonad
+
+-- Config
 import XMonad.Config.Azerty
+
+-- Prompt
+import XMonad.Prompt
+
+-- Hooks
 import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.ManageDocks
 import XMonad.Hooks.ManageHelpers
 import XMonad.Hooks.SetWMName
--- import XMonad.Layout.Fullscreen
+
+-- Layouts
 import XMonad.Layout.NoBorders
 import XMonad.Layout.Spiral
 import XMonad.Layout.Tabbed
+
+-- Utilities
 import XMonad.Util.Run(spawnPipe)
 import XMonad.Util.EZConfig(additionalKeys)
+
 import qualified XMonad.StackSet as W
 import qualified Data.Map        as M
 import Graphics.X11.ExtraTypes.XF86
 
+-- Actions
+import XMonad.Actions.GridSelect
 
 ------------------------------------------------------------------------
 -- Terminal
@@ -33,7 +46,7 @@ myTerminal = "/usr/bin/urxvt"
 -- Workspaces
 -- The default number of workspaces (virtual screens) and their names.
 --
-myWorkspaces = ["1:term","2:web","3:code","4:vm","5:media"] ++ map show [6..9]
+myWorkspaces = ["1:term","2:web","3:code","4:mail","5:media"]
  
 
 ------------------------------------------------------------------------
@@ -52,6 +65,8 @@ myWorkspaces = ["1:term","2:web","3:code","4:vm","5:media"] ++ map show [6..9]
 --
 myManageHook = composeAll
     [ className =? "Firefox"       --> doShift "2:web"
+    , className =? "Gedit" --> doShift "3:code"
+    , className =? "Evince" --> doShift "5:media"
     , resource  =? "desktop_window" --> doIgnore
     , isFullscreen --> (doF W.focusDown <+> doFullFloat)]
 
@@ -68,10 +83,9 @@ myManageHook = composeAll
 --
 
 myLayout = avoidStruts (
-    Tall 1 (3/100) (1/2) |||
-    Mirror (Tall 1 (3/100) (1/2)) |||
-    tabbed shrinkText tabConfig |||
-    spiral (6/7))
+    Tall 1 (3/100) (1/2)          |||
+    tabbed shrinkText tabConfig   |||
+    Mirror (Tall 1 (3/100) (1/2)))
 
 ------------------------------------------------------------------------
 -- Colors and borders
@@ -84,17 +98,14 @@ myFocusedBorderColor = "#98a7b6"
 tabConfig = defaultTheme {
     activeBorderColor   = "#7C7C7C",
     activeTextColor     = "#CEFFAC",
-    activeColor         = "#000000",
+    activeColor         = "#555555",
     inactiveBorderColor = "#7C7C7C",
-    inactiveTextColor   = "#EEEEEE",
+    inactiveTextColor   = "#222222",
     inactiveColor       = "#000000",
     fontName            = "terminus"
 }
 
--- Color of current window title in xmobar.
 xmobarTitleColor = "#FFB6B0"
-
--- Color of current workspace in xmobar.
 xmobarCurrentWorkspaceColor = "#CEFFAC"
 
 -- Width of the window border in pixels.
@@ -174,8 +185,8 @@ myKeys conf@(XConfig {XMonad.modMask = modMask}) = M.fromList $
   -- , ((modMask, xK_space),
   --    sendMessage NextLayout)
 
-  --  Reset the layouts on the current workspace to default.
-  , ((modMask .|. shiftMask, xK_space), setLayout $ XMonad.layoutHook conf)
+  --  Reset the layouts on the current workspace to default.  
+  --  , ((modMask .|. shiftMask, xK_space), setLayout $ XMonad.layoutHook conf)
 
   -- Resize viewed windows to the correct size.
   , ((modMask, xK_n), refresh)
@@ -224,6 +235,13 @@ myKeys conf@(XConfig {XMonad.modMask = modMask}) = M.fromList $
 
   -- Restart xmonad.
   , ((modMask, xK_q), restart "xmonad" True)
+ 
+  -- Display and select workspaces in a grid
+  , ((modMask, xK_g), goToSelected defaultGSConfig)
+ 
+  -- Display and select applications in a grid
+  -- , ((modMask, xK_s), spawnSelected defaultGSConfig ["urxvt", "firefox"])
+ 
   ]
   ++
  
@@ -290,7 +308,7 @@ myStartupHook = return ()
 -- Run xmonad with all the defaults we set up.
 --
 main = do
-  xmproc <- spawnPipe "/usr/bin/xmobar ~/.xmonad/xmobar.hs"
+  xmproc <- spawnPipe "~/.cabal/bin/xmobar ~/.xmonad/xmobar.hs"
   xmonad $ defaults {
       logHook = dynamicLogWithPP $ xmobarPP {
             ppOutput = hPutStrLn xmproc
