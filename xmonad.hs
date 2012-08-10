@@ -4,7 +4,7 @@
  
 import System.IO
 import System.Exit
-import XMonad
+import XMonad hiding ( (|||) )
 
 -- Config
 import XMonad.Config.Azerty
@@ -22,6 +22,8 @@ import XMonad.Hooks.SetWMName
 import XMonad.Layout.NoBorders
 import XMonad.Layout.Spiral
 import XMonad.Layout.Tabbed
+import XMonad.Layout.LayoutCombinators 
+import XMonad.Layout.ResizableTile 
 
 -- Utilities
 import XMonad.Util.Run(spawnPipe)
@@ -46,7 +48,7 @@ myTerminal = "/usr/bin/urxvt"
 -- Workspaces
 -- The default number of workspaces (virtual screens) and their names.
 --
-myWorkspaces = ["1:term","2:web","3:code","4:mail","5:media"]
+myWorkspaces = ["1:term","2:web","3:code","4:games","5:media"]
  
 
 ------------------------------------------------------------------------
@@ -83,9 +85,11 @@ myManageHook = composeAll
 --
 
 myLayout = avoidStruts (
-    Tall 1 (3/100) (1/2)          |||
-    tabbed shrinkText tabConfig   |||
-    Mirror (Tall 1 (3/100) (1/2)))
+    ResizableTall 1 (3/100) (1/2) [] |||
+    tabbed shrinkText tabConfig      |||
+    Mirror (ResizableTall 1 (3/100) (1/2) [])    |||
+    Full
+    )
 
 ------------------------------------------------------------------------
 -- Colors and borders
@@ -181,12 +185,8 @@ myKeys conf@(XConfig {XMonad.modMask = modMask}) = M.fromList $
   -- Cycle through the available layout algorithms.
   , ((modMask, xK_space), sendMessage NextLayout)
 
-  -- Go to the newt workspace
-  -- , ((modMask, xK_space),
-  --    sendMessage NextLayout)
-
   --  Reset the layouts on the current workspace to default.  
-  --  , ((modMask .|. shiftMask, xK_space), setLayout $ XMonad.layoutHook conf)
+  , ((modMask .|. shiftMask, xK_space), setLayout $ XMonad.layoutHook conf)
 
   -- Resize viewed windows to the correct size.
   , ((modMask, xK_n), refresh)
@@ -242,7 +242,15 @@ myKeys conf@(XConfig {XMonad.modMask = modMask}) = M.fromList $
   -- Display and select applications in a grid
   -- , ((modMask, xK_s), spawnSelected defaultGSConfig ["urxvt", "firefox"])
  
+  -- Jump to given layouts with LayoutCombinators 
+  , ((modMask, xK_t), sendMessage $ JumpToLayout "ResizableTall")
+  , ((modMask, xK_f), sendMessage $ JumpToLayout "Full")
+
+  -- Shrink/expand vertically a window
+  , ((modMask, xK_s), sendMessage MirrorShrink)
+  , ((modMask, xK_e), sendMessage MirrorExpand)
   ]
+
   ++
  
   -- mod-[1..9], Switch to workspace N
