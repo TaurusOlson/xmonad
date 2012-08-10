@@ -6,7 +6,7 @@
 Config {
     font = "xft:Pragmata-10",
     -- bgColor = "#151515",
-    bgColor = "#222222",
+    bgColor = "#111111",
     fgColor = "#c3c2c5",
     -- position = Static { xpos = 1920, ypos = 0, width = 1800, height = 16 },
     lowerOnStart = True,
