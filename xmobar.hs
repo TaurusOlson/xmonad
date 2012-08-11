@@ -5,10 +5,8 @@
 -- This is setup for dual 1920x1080 monitors, with the right monitor as primary
 Config {
     font = "xft:Pragmata-10",
-    -- bgColor = "#151515",
-    bgColor = "#111111",
+    bgColor = "#1f1b18",
     fgColor = "#c3c2c5",
-    -- position = Static { xpos = 1920, ypos = 0, width = 1800, height = 16 },
     lowerOnStart = True,
     commands = [
         Run Memory ["-t","Mem: <usedratio>%","-H","8192","-L","4096","-h","#FFB6B0","-l","#CEFFAC","-n","#FFFFCC"] 10,

@@ -1,7 +1,11 @@
--- xmonad config used by Vic Fryzel
--- Author: Vic Fryzel
+-------------------------------------------------------------------------------
+-- Taurus Olson's Xmonad config 
+--
+-- inspired by Vic Fryzel
 -- http://github.com/vicfryzel/xmonad-config
+-------------------------------------------------------------------------------
  
+
 import System.IO
 import System.Exit
 import XMonad hiding ( (|||) )
@@ -17,13 +21,14 @@ import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.ManageDocks
 import XMonad.Hooks.ManageHelpers
 import XMonad.Hooks.SetWMName
+import XMonad.Hooks.Place
 
 -- Layouts
 import XMonad.Layout.NoBorders
-import XMonad.Layout.Spiral
 import XMonad.Layout.Tabbed
 import XMonad.Layout.LayoutCombinators 
 import XMonad.Layout.ResizableTile 
+import XMonad.Layout.Grid 
 
 -- Utilities
 import XMonad.Util.Run(spawnPipe)
@@ -38,21 +43,20 @@ import XMonad.Actions.GridSelect
 
 ------------------------------------------------------------------------
 -- Terminal
--- The preferred terminal program, which is used in a binding below and by
--- certain contrib modules.
---
-myTerminal = "/usr/bin/urxvt"
+------------------------------------------------------------------------
 
+myTerminal = "/usr/bin/urxvt"
 
 ------------------------------------------------------------------------
 -- Workspaces
--- The default number of workspaces (virtual screens) and their names.
---
+------------------------------------------------------------------------
+
 myWorkspaces = ["1:term","2:web","3:code","4:games","5:media"]
  
-
 ------------------------------------------------------------------------
 -- Window rules
+------------------------------------------------------------------------
+
 -- Execute arbitrary actions and WindowSet manipulations when managing
 -- a new window. You can use this to, for example, always float a
 -- particular program, or have a client always appear on a particular
@@ -64,37 +68,38 @@ myWorkspaces = ["1:term","2:web","3:code","4:games","5:media"]
 --
 -- To match on the WM_NAME, you can use 'title' in the same way that
 -- 'className' and 'resource' are used below.
---
+
 myManageHook = composeAll
     [ className =? "Firefox"       --> doShift "2:web"
     , className =? "Gedit" --> doShift "3:code"
     , className =? "Evince" --> doShift "5:media"
+    , className =? "Gthumb" --> doShift "5:media"
+    , className =? "Nitrogen" --> doShift "5:media"
     , resource  =? "desktop_window" --> doIgnore
     , isFullscreen --> (doF W.focusDown <+> doFullFloat)]
 
-
 ------------------------------------------------------------------------
 -- Layouts
--- You can specify and transform your layouts by modifying these values.
--- If you change layout bindings be sure to use 'mod-shift-space' after
--- restarting (with 'mod-q') to reset your layout state to the new
--- defaults, as xmonad preserves your old layout settings by default.
---
--- The available layouts.  Note that each layout is separated by |||,
--- which denotes layout choice.
---
+------------------------------------------------------------------------
 
-myLayout = avoidStruts (
-    ResizableTall 1 (3/100) (1/2) [] |||
-    tabbed shrinkText tabConfig      |||
-    Mirror (ResizableTall 1 (3/100) (1/2) [])    |||
+myLayout = avoidStruts $
+    tiled        |||
+    tabs         |||
+    Mirror tiled |||
+    Grid         |||
     Full
-    )
+    
+    where 
+        tiled   = ResizableTall nmaster delta ratio []
+        nmaster = 1
+        delta   = 3/100
+        ratio   = 1/2
+        tabs    = tabbed shrinkText tabConfig 
 
 ------------------------------------------------------------------------
 -- Colors and borders
--- Currently based on the ir_black theme.
---
+------------------------------------------------------------------------
+
 myNormalBorderColor  = "#151515"
 myFocusedBorderColor = "#98a7b6"
 
@@ -115,21 +120,21 @@ xmobarCurrentWorkspaceColor = "#CEFFAC"
 -- Width of the window border in pixels.
 myBorderWidth = 3
 
-
 ------------------------------------------------------------------------
 -- Key bindings
---
+------------------------------------------------------------------------
+
 -- modMask lets you specify which modkey you want to use. The default
 -- is mod1Mask ("left alt").  You may also consider using mod3Mask
 -- ("right alt"), which does not conflict with emacs keybindings. The
 -- "windows key" is usually mod4Mask.
---
+
 myModMask = mod4Mask
  
 myKeys conf@(XConfig {XMonad.modMask = modMask}) = M.fromList $
   ----------------------------------------------------------------------
   -- Custom key bindings
-  --
+  ----------------------------------------------------------------------
 
   -- Start a terminal.  Terminal to start is specified by myTerminal variable.
   [ ((modMask .|. shiftMask, xK_Return), spawn $ XMonad.terminal conf)
@@ -174,10 +179,6 @@ myKeys conf@(XConfig {XMonad.modMask = modMask}) = M.fromList $
 
   -- Decrease brightness
   , ((0, xF86XK_MonBrightnessDown), spawn "xbacklight -20")
-
-  --------------------------------------------------------------------
-  -- "Standard" xmonad key bindings
-  --
 
   -- Close focused window.
   , ((modMask, xK_w), kill)
@@ -237,18 +238,20 @@ myKeys conf@(XConfig {XMonad.modMask = modMask}) = M.fromList $
   , ((modMask, xK_q), restart "xmonad" True)
  
   -- Display and select workspaces in a grid
-  , ((modMask, xK_g), goToSelected defaultGSConfig)
+  , ((modMask .|. shiftMask, xK_g), goToSelected defaultGSConfig)
  
   -- Display and select applications in a grid
   -- , ((modMask, xK_s), spawnSelected defaultGSConfig ["urxvt", "firefox"])
  
   -- Jump to given layouts with LayoutCombinators 
-  , ((modMask, xK_t), sendMessage $ JumpToLayout "ResizableTall")
+  , ((modMask, xK_r), sendMessage $ JumpToLayout "ResizableTall")
   , ((modMask, xK_f), sendMessage $ JumpToLayout "Full")
+  , ((modMask, xK_g), sendMessage $ JumpToLayout "Grid")
 
   -- Shrink/expand vertically a window
   , ((modMask, xK_s), sendMessage MirrorShrink)
   , ((modMask, xK_e), sendMessage MirrorExpand)
+
   ]
 
   ++
@@ -270,7 +273,8 @@ myKeys conf@(XConfig {XMonad.modMask = modMask}) = M.fromList $
  
 ------------------------------------------------------------------------
 -- Mouse bindings
---
+------------------------------------------------------------------------
+
 -- Focus rules
 -- True if your focus should follow your mouse cursor.
 myFocusFollowsMouse :: Bool
@@ -290,46 +294,38 @@ myMouseBindings (XConfig {XMonad.modMask = modMask}) = M.fromList $
     -- you may also bind events to the mouse scroll wheel (button4 and button5)
   ]
  
-
-------------------------------------------------------------------------
--- Status bars and logging
--- Perform an arbitrary action on each internal state change or X event.
--- See the 'DynamicLog' extension for examples.
---
--- To emulate dwm's status bar
---
--- > logHook = dynamicLogDzen
---
- 
-
 ------------------------------------------------------------------------
 -- Startup hook
+------------------------------------------------------------------------
+
 -- Perform an arbitrary action each time xmonad starts or is restarted
 -- with mod-q.  Used by, e.g., XMonad.Layout.PerWorkspace to initialize
 -- per-workspace layout choices.
 --
 -- By default, do nothing.
+
 myStartupHook = return ()
- 
 
 ------------------------------------------------------------------------
 -- Run xmonad with all the defaults we set up.
---
+------------------------------------------------------------------------
+
 main = do
   xmproc <- spawnPipe "~/.cabal/bin/xmobar ~/.xmonad/xmobar.hs"
   xmonad $ defaults {
       logHook = dynamicLogWithPP $ xmobarPP {
             ppOutput = hPutStrLn xmproc
-          , ppTitle = xmobarColor xmobarTitleColor "" . shorten 100
+          , ppTitle = xmobarColor xmobarTitleColor "" . shorten 30
           , ppCurrent = xmobarColor xmobarCurrentWorkspaceColor ""
           , ppSep = "   "}
       , manageHook = manageDocks <+> myManageHook
       , startupHook = setWMName "LG3D"
   }
  
-
 ------------------------------------------------------------------------
 -- Combine it all together
+------------------------------------------------------------------------
+
 -- A structure containing your configuration settings, overriding
 -- fields in the default config. Any you don't override, will 
 -- use the defaults defined in xmonad/XMonad/Config.hs
