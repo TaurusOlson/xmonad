@@ -3,22 +3,20 @@
 -- http://github.com/vicfryzel/xmonad-config
 
 -- This is setup for dual 1920x1080 monitors, with the right monitor as primary
-Config {
-    font = "xft:Pragmata-10",
-    bgColor = "#1f1b18",
-    fgColor = "#c3c2c5",
-    lowerOnStart = True,
-    commands = [
+Config { font         = "xft:Pragmata-10"
+       , bgColor      = "#1f1b18"
+       , position     = Top
+       , fgColor      = "#c3c2c5"
+       , lowerOnStart = True
+       , commands     = [
         Run Memory ["-t","Mem: <usedratio>%","-H","8192","-L","4096","-h","#FFB6B0","-l","#CEFFAC","-n","#FFFFCC"] 10,
-        -- Run Swap ["-t","Swap: <usedratio>%","-H","1024","-L","512","-h","#FFB6B0","-l","#CEFFAC","-n","#FFFFCC"] 10,
-        -- Run Network "eth0" ["-t","Net: <rx>, <tx>","-H","200","-L","10","-h","#FFB6B0","-l","#CEFFAC","-n","#FFFFCC"] 10,
         Run Date "%a %b %_d %H:%M" "date" 10,
+        Run Com "mpd.sh" [] "mpd" 30,
         Run DiskU [("/", "Disk: <used>/<size>")]
                   ["-L", "20", "-H", "100", "-m", "1", "-p", "3", "-h","#FFB6B0","-l","#CEFFAC","-n","#FFFFCC"] 10,
         Run StdinReader
-    ],
-    sepChar = "%",
-    alignSep = "}{",
-    -- template = "%StdinReader% }{  %memory% %disku%  %swap%   %eth0%   <fc=#FFFFCC>%date%</fc>"
-    template = "%StdinReader% }{  %memory%    %disku%    <fc=#FFFFCC>%date%</fc>"
+        ]
+       , sepChar = "%"
+       , alignSep = "}{"
+       , template = "%StdinReader% }{ %mpd%    %memory%    %disku%    <fc=#FFFFCC>%date%</fc>"
 }
