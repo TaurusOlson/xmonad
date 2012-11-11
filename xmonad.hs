@@ -29,10 +29,12 @@ import XMonad.Layout.Tabbed
 import XMonad.Layout.LayoutCombinators 
 import XMonad.Layout.ResizableTile 
 import XMonad.Layout.Grid 
+import XMonad.Layout.PerWorkspace (onWorkspace)
 
 -- Utilities
 import XMonad.Util.Run(spawnPipe)
 import XMonad.Util.EZConfig(additionalKeys)
+import XMonad.Util.Scratchpad 
 
 import qualified XMonad.StackSet as W
 import qualified Data.Map        as M
@@ -40,12 +42,13 @@ import Graphics.X11.ExtraTypes.XF86
 
 -- Actions
 import XMonad.Actions.GridSelect
+import XMonad.Actions.CopyWindow (copyToAll, killAllOtherCopies)
 
 ------------------------------------------------------------------------
 -- Terminal
 ------------------------------------------------------------------------
 
-myTerminal = "/usr/bin/urxvt"
+myTerminal = "/usr/bin/urxvt -e /usr/bin/zsh"
 
 ------------------------------------------------------------------------
 -- Workspaces
@@ -69,39 +72,68 @@ myWorkspaces = ["1:term","2:web","3:code","4:games","5:media"]
 -- To match on the WM_NAME, you can use 'title' in the same way that
 -- 'className' and 'resource' are used below.
 
-myManageHook = composeAll
-    [ className =? "Firefox"       --> doShift "2:web"
-    , className =? "Gedit" --> doShift "3:code"
-    , className =? "Evince" --> doShift "5:media"
-    , className =? "Gthumb" --> doShift "5:media"
-    , className =? "Nitrogen" --> doShift "5:media"
-    , resource  =? "desktop_window" --> doIgnore
-    , isFullscreen --> (doF W.focusDown <+> doFullFloat)]
+myManageHook = (composeAll . concat $
+    [ [ className =? w --> doShift "2:web"   | w <- web    ]
+    , [ className =? e --> doShift "3:code"  | e <- editor ]
+    , [ className =? v --> doShift "5:media" | v <- viewer ]
+    , [ resource  =? "desktop_window" --> doIgnore
+    , title =? "mutt" --> doShift "5:media"
+    , isFullscreen    --> (doF W.focusDown <+> doFullFloat)
+    , isDialog        --> doCenterFloat
+    ]])
+    where
+        web    = ["Firefox", "Uzbl"]  
+        viewer = ["Evince", "Gthumb", "Nitrogen"]
+        editor = ["Gedit"]
+
+-- <+> manageScratchPad
+
+manageScratchPad :: ManageHook
+manageScratchPad = scratchpadManageHook (W.RationalRect l t w h)
+    where
+        h = 0.35    -- height
+        w = 0.375   -- width
+        t = 0.1   -- distance from top edge
+        l = 0.6   -- distance from left edge
+myScratchPad = scratchpadSpawnActionCustom "urxvt -name scratchpad -e /usr/bin/zsh"
 
 ------------------------------------------------------------------------
 -- Layouts
 ------------------------------------------------------------------------
 
-myLayout = avoidStruts $
-    tiled        |||
-    tabs         |||
-    Mirror tiled |||
-    Grid         |||
-    Full
-    
+-- myLayout = avoidStruts $
+--     tiled        |||
+--     tabs         |||
+--     Mirror tiled |||
+--     Circle       |||
+--     Grid         |||
+--     Full
+--     where 
+--         tiled   = ResizableTall nmaster delta ratio []
+--         nmaster = 1
+--         delta   = 3/100
+--         ratio   = 1/2
+--         tabs    = tabbed shrinkText tabConfig 
+
+myLayout = smartBorders $ avoidStruts $
+    onWorkspace "1:term"  (tiled ||| Grid) $
+    onWorkspace "2:web"   (Full ||| Grid ||| tiled) $ 
+    onWorkspace "3:code"  (Grid ||| Full) $
+    onWorkspace "4:games" (Mirror tiled ||| Full) $
+    onWorkspace "5:media" (Full ||| tiled) $ Full
     where 
-        tiled   = ResizableTall nmaster delta ratio []
-        nmaster = 1
-        delta   = 3/100
-        ratio   = 1/2
-        tabs    = tabbed shrinkText tabConfig 
+      tiled   = ResizableTall nmaster delta ratio []
+      nmaster = 1
+      delta   = 3/100
+      ratio   = 1/2
 
 ------------------------------------------------------------------------
 -- Colors and borders
 ------------------------------------------------------------------------
 
 myNormalBorderColor  = "#151515"
-myFocusedBorderColor = "#98a7b6"
+-- myFocusedBorderColor = "#98a7b6"
+myFocusedBorderColor = "#CEFFAC"
 
 -- Colors for text and backgrounds of each tab when in "Tabbed" layout.
 tabConfig = defaultTheme {
@@ -130,6 +162,8 @@ myBorderWidth = 3
 -- "windows key" is usually mod4Mask.
 
 myModMask = mod4Mask
+
+myMusicPlayer = "/usr/bin/urxvt -e /usr/bin/ncmpcpp"
  
 myKeys conf@(XConfig {XMonad.modMask = modMask}) = M.fromList $
   ----------------------------------------------------------------------
@@ -139,7 +173,9 @@ myKeys conf@(XConfig {XMonad.modMask = modMask}) = M.fromList $
   -- Start a terminal.  Terminal to start is specified by myTerminal variable.
   [ ((modMask .|. shiftMask, xK_Return), spawn $ XMonad.terminal conf)
 
-  -- Launch dmenu via yeganesh.
+  -- Use this to launch programs without a key binding.
+  , ((modMask .|. shiftMask, xK_m), spawn myMusicPlayer)
+
   -- Use this to launch programs without a key binding.
   , ((modMask, xK_p), spawn "dmenu-xmonad")
 
@@ -195,37 +231,26 @@ myKeys conf@(XConfig {XMonad.modMask = modMask}) = M.fromList $
   -- Move focus to the next window.
   , ((modMask, xK_Tab), windows W.focusDown)
 
-  -- Move focus to the next window.
+  -- Move focus to the next/previous/master window.
   , ((modMask, xK_j), windows W.focusDown)
-
-  -- Move focus to the previous window.
   , ((modMask, xK_k), windows W.focusUp  )
-
-  -- Move focus to the master window.
   , ((modMask, xK_m), windows W.focusMaster  )
-
   -- Swap the focused window and the master window.
   , ((modMask, xK_Return), windows W.swapMaster)
 
-  -- Swap the focused window with the next window.
+  -- Swap the focused window with the next/previous window.
   , ((modMask .|. shiftMask, xK_j), windows W.swapDown  )
-
-  -- Swap the focused window with the previous window.
   , ((modMask .|. shiftMask, xK_k), windows W.swapUp    )
 
-  -- Shrink the master area.
+  -- Shrink/expand the master area.
   , ((modMask, xK_h), sendMessage Shrink)
-
-  -- Expand the master area.
   , ((modMask, xK_l), sendMessage Expand)
 
   -- Push window back into tiling.
   , ((modMask, xK_t), withFocused $ windows . W.sink)
 
-  -- Increment the number of windows in the master area.
+  -- Increment/decrement the number of windows in the master area.
   , ((modMask, xK_i), sendMessage (IncMasterN 1))
-
-  -- Decrement the number of windows in the master area.
   , ((modMask, xK_d), sendMessage (IncMasterN (-1)))
 
   -- Toggle the status bar gap.
@@ -252,6 +277,15 @@ myKeys conf@(XConfig {XMonad.modMask = modMask}) = M.fromList $
   , ((modMask, xK_s), sendMessage MirrorShrink)
   , ((modMask, xK_e), sendMessage MirrorExpand)
 
+  -- Spawn a scratchpad terminal
+  -- , ((modMask .|. shiftMask, xK_t), scratchpadSpawnAction defaultConfig {terminal = myTerminal})
+  , ((modMask .|. shiftMask, xK_t), myScratchPad)
+
+  -- Make focused window always visible
+  , (( modMask, xK_v), windows copyToAll)
+
+  -- Toggle window state back
+  , (( modMask .|. shiftMask, xK_v), killAllOtherCopies)
   ]
 
   ++
@@ -311,14 +345,15 @@ myStartupHook = return ()
 ------------------------------------------------------------------------
 
 main = do
-  xmproc <- spawnPipe "~/.cabal/bin/xmobar ~/.xmonad/xmobar.hs"
+  -- xmproc <- spawnPipe "~/.cabal/bin/xmobar ~/.xmonad/xmobar.hs"
+  xmproc <- spawnPipe "/usr/bin/xmobar ~/.xmonad/xmobar.hs"
   xmonad $ defaults {
       logHook = dynamicLogWithPP $ xmobarPP {
             ppOutput = hPutStrLn xmproc
           , ppTitle = xmobarColor xmobarTitleColor "" . shorten 30
           , ppCurrent = xmobarColor xmobarCurrentWorkspaceColor ""
           , ppSep = "   "}
-      , manageHook = manageDocks <+> myManageHook
+      , manageHook = manageScratchPad <+> myManageHook <+> manageDocks
       , startupHook = setWMName "LG3D"
   }
  
@@ -347,7 +382,7 @@ defaults = defaultConfig {
     mouseBindings      = myMouseBindings,
  
     -- hooks, layouts
-    layoutHook         = smartBorders $ myLayout,
+    layoutHook         = myLayout,
     manageHook         = myManageHook,
     startupHook        = myStartupHook
 }

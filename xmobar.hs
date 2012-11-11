@@ -4,7 +4,7 @@
 
 -- This is setup for dual 1920x1080 monitors, with the right monitor as primary
 Config { font         = "xft:Pragmata-10"
-       , bgColor      = "#1f1b18"
+       , bgColor      = "#111111"
        , position     = Top
        , fgColor      = "#c3c2c5"
        , lowerOnStart = True
@@ -18,5 +18,5 @@ Config { font         = "xft:Pragmata-10"
         ]
        , sepChar = "%"
        , alignSep = "}{"
-       , template = "%StdinReader% }{ %mpd%    %memory%    %disku%    <fc=#FFFFCC>%date%</fc>"
+       , template = "%StdinReader% }{ %mpd%    %memory%    %disku%    <fc=#E36BB2>%date%</fc>"
 }
