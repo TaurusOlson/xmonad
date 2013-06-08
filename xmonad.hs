@@ -83,7 +83,7 @@ myManageHook = (composeAll . concat $
     ]])
     where
         web    = ["Firefox", "Uzbl"]  
-        viewer = ["Evince", "Gthumb", "Nitrogen"]
+        viewer = ["sxiv", "Evince", "Gthumb", "Nitrogen"]
         editor = ["Gedit"]
 
 -- <+> manageScratchPad
@@ -116,7 +116,7 @@ myScratchPad = scratchpadSpawnActionCustom "urxvt -name scratchpad -e /usr/bin/z
 --         tabs    = tabbed shrinkText tabConfig 
 
 myLayout = smartBorders $ avoidStruts $
-    onWorkspace "1:term"  (tiled ||| Grid) $
+    onWorkspace "1:term"  (Full ||| Grid ||| tiled) $
     onWorkspace "2:web"   (Full ||| Grid ||| tiled) $ 
     onWorkspace "3:code"  (Grid ||| Full) $
     onWorkspace "4:games" (Mirror tiled ||| Full) $
